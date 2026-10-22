@@ -64,7 +64,19 @@ These checks establish arithmetic consistency with the methodology. The owner su
 
 ### Network limitation and unresolved incident
 
-The audit checks for an UP IPv4 default route with a zero destination and mask in `/proc/net/route`. It does not test external reachability or DNS. The previously reported NAT internet/DNS failures remain **unresolved and not retested** in the supplied evidence. A successful SSH login and a present default route do not close that incident; no root cause or fix is claimed.
+The audit checks for an UP IPv4 default route with a zero destination and mask in `/proc/net/route`. It does not test external reachability or DNS. The previously reported VMware NAT internet/DNS failures were followed by **owner-reported successful external connectivity and DNS retests** (see below). This supports recovery at the time of retesting; the raw terminal outputs were not independently inspected, and no definitive root cause or corrective action has been established. A successful SSH login or present default route alone would not prove external reachability.
+
+### Follow-up network connectivity and DNS retest — owner reported
+
+After the earlier VMware NAT connectivity incident, the owner reported that all three requested read-only commands ran successfully from the Ubuntu guest:
+
+| Read-only command | Owner-reported outcome | Verification limit |
+| --- | --- | --- |
+| `df -B1 /` | Command passed | The exact filesystem `Size` value was not supplied, so the disk-pressure calculation cannot yet be independently reproduced. |
+| `ping -c 4 1.1.1.1` | Passed | Supports external IPv4 reachability at the time of the test; packet counts and raw output were not supplied. |
+| `getent hosts github.com` | Passed | Supports DNS resolution at the time of the test; resolved addresses and raw output were not supplied. |
+
+**Conclusion:** The previously reported internet/DNS failure is no longer reproduced based on the user's later report. Its exact cause and resolution mechanism remain unverified. No VMware, router, firewall, SSH, storage or application configuration changes are asserted by this evidence update.
 
 ### Next read-only verification checkpoint
 
@@ -73,7 +85,7 @@ The audit checks for an UP IPv4 default route with a zero destination and mask i
 3. Compare disk pressure using Size and Avail, and compare memory using the audit's own total/available pair and one-decimal rounding. Record timing differences instead of forcing exact agreement between separate samples.
 4. Review this evidence update and the separate automated checks before marking the disk/memory comparison complete. Gate 3 cannot fully close from the current data: **df Size is still missing for independent disk-pressure reconciliation**. The owner has now reported the audit disk and memory percentages (27.4% and 26.6%), but their raw JSON values were not independently inspected.
 
-The remaining original checklist items still require their own evidence, including host fingerprint confirmation, socket state where relevant, architecture review and any optional threshold experiment. Internet/DNS recovery needs separate read-only retest evidence. Any security, network or storage configuration changes require a separate gate.
+The remaining original checklist items still require their own evidence, including host fingerprint confirmation, socket state where relevant, architecture review and any optional threshold experiment. Later internet/DNS retests were reported successful (see below), but their raw terminal output is not stored or independently inspected. Any security, network or storage configuration changes require a separate gate.
 
 ## Safe evidence record
 
