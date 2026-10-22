@@ -24,7 +24,7 @@ Live Ubuntu VM verification is partially documented from owner-reported results 
 | SSH service | Active | Service state reported; socket state and host fingerprint verification were not supplied. |
 | Remote SSH | Windows-to-Ubuntu login successful | Login reported by the owner; no terminal transcript published. |
 | Unit tests on Ubuntu | 25 passed; exit code 0 | Live run reported by the owner; separate from GitHub Actions. |
-| Audit on Ubuntu | Exit code 0; no warnings reported | Actual invocation, flags and JSON metrics were not supplied for independent comparison. |
+| Audit on Ubuntu | Exit code 0; no warnings; disk pressure 27.4%; memory utilization 26.6% | Results reported by the owner, not independently inspected against raw audit JSON. |
 | IPv4 default route | Present: yes | Route presence reported; does not establish internet access or DNS resolution. |
 
 ### Disk measurements and comparison limit
@@ -39,7 +39,7 @@ The owner reported these fields from `df -B1 /`:
 
 In [the audit source](../linux_audit/audit.py), `collect_report()` uses `shutil.disk_usage()`, and `used_percent()` calculates `round(100 * (total - available) / total, 1)`. On Linux, the disk free value represents space available to the calling user. The matching comparison needs `df` Size and Avail for the same filesystem and user context.
 
-Used and Avail alone cannot reproduce this calculation. Do not infer Size by adding them: reserved filesystem space can make that sum differ from total. No disk pressure percentage or numerical match to the audit is claimed. The actual audit `disk.used_percent` was not supplied.
+Used and Avail alone cannot reproduce this calculation. Do not infer Size by adding them: reserved filesystem space can make that sum differ from total. The owner subsequently reported `disk.used_percent = 27.4%`, while `df` displayed 24% usage at a different observation. These percentages use different filesystem accounting methods and are not directly equivalent. An exact independent recalculation remains pending because the filesystem Size was not supplied; the raw audit output was not inspected.
 
 ### Memory and swap calculations
 
@@ -60,7 +60,7 @@ The source reads `MemTotal` and `MemAvailable` from `/proc/meminfo`; it does not
 - `(5489228 - 4059932) / 5489228 * 100 ≈ 26.04%`; the source's one-decimal rounding would yield **26.0% for these inputs**.
 - Swap consumed: `4194300 - 4194300 = 0 KiB`. This is a calculation from the reported `free` values; the auditor does not report swap usage.
 
-These checks establish arithmetic consistency with the methodology, not agreement with an observed audit metric. The actual audit `memory.used_percent` was not supplied. Memory and disk readings can change between commands.
+These checks establish arithmetic consistency with the methodology. The owner subsequently reported `memory.used_percent = 26.6%` from the live audit; earlier `free -k` figures calculate to 26.0%. Such a difference is consistent with memory changing between samples, but the raw audit output was not independently inspected.
 
 ### Network limitation and unresolved incident
 
@@ -71,7 +71,7 @@ The audit checks for an UP IPv4 default route with a zero destination and mask i
 1. On the same Ubuntu guest, run `df -B1 /` and the audit close together. Supply the root filesystem's **Size**, Used and Avail in bytes, with device identifiers removed.
 2. Run `PYTHONDONTWRITEBYTECODE=1 python3 -m linux_audit --require-ssh --require-network --json` from the existing repository checkout and record the exit code immediately. Review the full output privately. Share only redacted `disk.used_percent` and `memory.used_percent`, plus `disk.total_bytes`, `disk.free_bytes`, `memory.total_kib` and `memory.available_kib` if needed to reconcile readings taken at different moments. Retain the flags, exit code and any sanitized warning text.
 3. Compare disk pressure using Size and Avail, and compare memory using the audit's own total/available pair and one-decimal rounding. Record timing differences instead of forcing exact agreement between separate samples.
-4. Review this evidence update and the separate automated checks before marking the disk/memory comparison complete. Gate 3 cannot close from the current data: at minimum, **df Size and redacted audit disk and memory percentages remain missing**.
+4. Review this evidence update and the separate automated checks before marking the disk/memory comparison complete. Gate 3 cannot fully close from the current data: **df Size is still missing for independent disk-pressure reconciliation**. The owner has now reported the audit disk and memory percentages (27.4% and 26.6%), but their raw JSON values were not independently inspected.
 
 The remaining original checklist items still require their own evidence, including host fingerprint confirmation, socket state where relevant, architecture review and any optional threshold experiment. Internet/DNS recovery needs separate read-only retest evidence. Any security, network or storage configuration changes require a separate gate.
 
