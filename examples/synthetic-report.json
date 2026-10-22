@@ -1,0 +1,13 @@
+{
+  "checked_at_utc": "2026-01-01T12:00:00+00:00",
+  "hostname": "demo-ubuntu-vm",
+  "operating_system": "Ubuntu 24.04 LTS",
+  "kernel": "6.x-demo",
+  "uptime_seconds": 3600,
+  "disk": {"path": "/", "total_bytes": 42949672960, "free_bytes": 21474836480, "used_percent": 50.0},
+  "memory": {"total_kib": 4194304, "available_kib": 2097152, "used_percent": 50.0},
+  "ssh_service_state": "active",
+  "default_ipv4_route_present": true,
+  "alerts": [],
+  "status": "ok"
+}

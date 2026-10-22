@@ -1,0 +1,45 @@
+name: Verify Linux audit
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Python syntax
+        run: python -m compileall -q linux_audit tests
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Read-only audit smoke check (runner, not owner VM)
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          result = subprocess.run(
+              [sys.executable, '-m', 'linux_audit', '--json'],
+              capture_output=True, text=True, timeout=15,
+          )
+          if result.returncode not in (0, 1):
+              raise SystemExit('Audit execution failed')
+          report = json.loads(result.stdout)
+          expected_status = 'warning' if report['alerts'] else 'ok'
+          assert report['status'] == expected_status
+          assert result.returncode == bool(report['alerts'])
+          assert report['disk']['total_bytes'] > 0
+          assert report['memory']['total_kib'] > 0
+          print('Runner smoke check passed; host report withheld.')
+          PY
